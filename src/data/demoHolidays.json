@@ -1,0 +1,34 @@
+{
+  "thanksgivingDay": [
+    {
+      "open": "1700",
+      "close": "2400",
+      "id": "5ca578bwe5d8",
+      "isOpen": true
+    }
+  ],
+  "christmasEve": [
+    {
+      "open": "0700",
+      "close": "1700",
+      "id": "5ca55dfwb0c5c7",
+      "isOpen": true
+    }
+  ],
+  "christmas": [
+    {
+      "open": "",
+      "close": "",
+      "id": "5ca5578xscd5d1",
+      "isOpen": false
+    }
+  ],
+  "memorialDay": [
+    {
+      "open": "0800",
+      "close": "1200",
+      "id": "5ca5578bddsf5df",
+      "isOpen": true
+    }
+  ]
+}

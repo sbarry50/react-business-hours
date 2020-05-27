@@ -32,24 +32,29 @@ class BusinessHoursInput extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedTime: this.props.selectedTime,
-      times: []
+      times: this.generateTimes(props.timeIncrement)
     };
 
     this.handleChange = this.handleChange.bind(this);
   }
 
-  componentDidMount() {
-    this.setState({
-      times: this.generateTimes(this.props.timeIncrement)
-    });
-  }
+  //   componentWillReceiveProps(nextProps) {
+  //     // You don't have to do this check first, but it can help prevent an unneeded render
+  //     if (nextProps.selectedTime !== this.state.selected) {
+  //       this.setState({ selected: nextProps.selectedTime });
+  //     }
+  //   }
 
   handleChange(e) {
-    this.setState({
-      selectedTime: e.target.value
-    });
-    this.props.onTimeChange(e.target.value);
+    const value = helpers.backendInputFormat(
+      e.target.value,
+      this.props.localization,
+      this.props.hourFormat24
+    );
+    // this.setState({
+    //   selected: value
+    // });
+    this.props.onTimeChange(value);
   }
 
   defaultText() {
@@ -158,7 +163,7 @@ class BusinessHoursInput extends React.Component {
 
   formattedTime() {
     return helpers.frontendInputFormat(
-      this.state.selectedTime,
+      this.props.selectedTime,
       this.props.localization,
       this.props.hourFormat24
     );
@@ -177,11 +182,11 @@ class BusinessHoursInput extends React.Component {
   }
 
   render() {
-    const selected = this.state.selectedTime;
     const name = this.props.name;
     const type = this.props.type;
     const index = this.props.index;
     const hours = this.props.hours;
+    const selected = this.props.selectedTime;
     const localization = this.props.localization;
     const hourFormat24 = this.props.hourFormat24;
     const anyError = this.props.anyError;
@@ -205,14 +210,14 @@ class BusinessHoursInput extends React.Component {
             )}
           </Select>
         ) : (
-          <div>
+          <div key={selected}>
             <Input
               style={{ border: anyError ? "solid #e3342f 1px" : "" }}
               type='text'
               list={this.datalistID()}
               placeholder={this.defaultText()}
-              onChange={this.handleChange}
-              value={this.formattedTime()}
+              onBlur={this.handleChange}
+              defaultValue={this.formattedTime()}
             />
             <datalist id={this.datalistID()}>
               {helpers.isFirstRow(index) && (

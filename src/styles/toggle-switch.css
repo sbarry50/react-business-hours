@@ -1,6 +1,6 @@
 .toggle-switch {
   position: relative;
-  width: 75px;
+  width: 90px;
   display: inline-block;
   vertical-align: middle;
   -webkit-user-select: none;
@@ -23,26 +23,24 @@
   display: block;
   width: 200%;
   margin-left: -100%;
-  transition: margin 0.3s ease-in 0s;
+  transition: margin 0.2s ease-in 0s;
 }
 .toggle-switch-inner::before,
 .toggle-switch-inner::after {
   display: block;
   float: left;
   width: 50%;
-  height: 34px;
+  height: 25px;
   padding: 0;
-  line-height: 34px;
-  font-size: 14px;
+  line-height: 25px;
+  font-size: 12px;
   color: white;
   font-weight: bold;
   box-sizing: border-box;
 }
 .toggle-switch-inner:before {
   content: "Yes";
-  text-transform: uppercase;
   padding-left: 10px;
-  background-color: #f90;
   color: #fff;
 }
 .toggle-switch-disabled {
@@ -55,7 +53,6 @@
 }
 .toggle-switch-inner::after {
   content: "No";
-  text-transform: uppercase;
   padding-right: 10px;
   background-color: #ccc;
   color: #fff;
@@ -63,16 +60,17 @@
 }
 .toggle-switch-switch {
   display: block;
-  width: 24px;
-  margin: 5px;
+  width: 19px;
+  height: 19px;
+  margin: 3px;
   background: #fff;
   position: absolute;
   top: 0;
   bottom: 0;
-  right: 40px;
+  right: 72%;
   border: 0 solid #ccc;
   border-radius: 20px;
-  transition: all 0.3s ease-in 0s;
+  transition: all 0.2s ease-in 0s;
 }
 .toggle-switch-checkbox:checked + .toggle-switch-label .toggle-switch-inner {
   margin-left: 0;

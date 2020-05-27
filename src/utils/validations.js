@@ -1,4 +1,13 @@
-export const validations = {
+import helpers from "./helpers";
+
+export default {
+  defaultValidations: function() {
+    return {
+      open: this.defaultValidation(),
+      close: this.defaultValidation(),
+      anyErrors: false
+    };
+  },
   defaultValidation: function() {
     return {
       invalidInput: false,
@@ -7,95 +16,134 @@ export const validations = {
       midnightNotLast: false
     };
   },
-  defaultValidations: function() {
-    return {
-      anyErrors: false,
-      open: this.defaultValidation(),
-      close: this.defaultValidation()
-    };
-  },
-  isValidInput: function(input) {
-    return (
-      this.isValidBackendTime(input) ||
-      input === "2400" ||
-      input === "24hrs" ||
-      input === ""
-    );
-  },
-  resetValidations: function() {
-    let validations = [];
+  resetValidations: function(hours) {
+    const validations = [];
 
-    this.hours.forEach((hour, index) => {
-      validations[index] = this.defaultValidations();
-    });
-
-    this.validations = validations;
-  },
-  runValidations: function() {
-    let inputNum = 1;
-
-    this.resetValidations();
-
-    this.hours.forEach((hour, index) => {
-      this.runValidation(hour.open, index, inputNum, "open");
-      inputNum++;
-      this.runValidation(hour.close, index, inputNum, "close");
-      inputNum++;
-    });
-
-    this.updateAnyErrors();
-  },
-  runValidation: function(value, index, inputNum, whichTime) {
-    if (this.isValidBackendTime(value)) {
-      this.validations[index][whichTime] = this.runInputValidation(
-        value,
-        index,
-        inputNum,
-        this.totalInputs
-      );
-    }
-
-    this.validations[index][whichTime].invalidInput = !this.isValidInput(value)
-      ? true
-      : false;
-
-    this.updateAdjacentValidations(index, whichTime, inputNum);
-  },
-  runInputValidation: function(value, index, inputNum, totalInputs) {
-    const prevTime = this.getPrevious(this.hours, index, inputNum);
-    const nextTime = this.getNext(this.hours, index, inputNum, totalInputs);
-    let validations = this.defaultValidation();
-
-    validations.midnightNotLast =
-      value === "2400" && !this.isLastInput(inputNum, totalInputs)
-        ? true
-        : false;
-
-    if (prevTime === undefined) {
-      validations.greaterThanNext =
-        value >= nextTime && nextTime !== "" ? true : false;
-    } else if (nextTime === undefined) {
-      validations.lessThanPrevious =
-        value <= prevTime && prevTime !== "" ? true : false;
-    } else {
-      validations.lessThanPrevious =
-        value <= prevTime && prevTime !== "" ? true : false;
-      validations.greaterThanNext =
-        value >= nextTime && nextTime !== "" ? true : false;
+    for (let i = 0; i < hours.length; i++) {
+      validations[i] = this.defaultValidations();
     }
 
     return validations;
   },
-  updateAdjacentValidations: function(index, whichTime, inputNum) {
+  runValidations: function(hours) {
+    const totalInputs = helpers.totalInputs(hours);
+    let inputNum = 1;
+    let validations = this.resetValidations(hours);
+
+    hours.forEach((hour, index) => {
+      validations[index].open = this.runInputValidation(
+        hour.open,
+        hours,
+        index,
+        inputNum,
+        totalInputs
+      );
+
+      validations = this.updateAdjacentValidations(
+        validations,
+        index,
+        "open",
+        inputNum,
+        totalInputs
+      );
+
+      inputNum++;
+
+      validations[index].close = this.runInputValidation(
+        hour.close,
+        hours,
+        index,
+        inputNum,
+        helpers.totalInputs(hours)
+      );
+
+      validations = this.updateAdjacentValidations(
+        validations,
+        index,
+        "close",
+        inputNum,
+        totalInputs
+      );
+
+      inputNum++;
+
+      validations[index].anyErrors = this.anyErrors(validations[index]);
+    });
+
+    return validations;
+  },
+  runValidation: function(
+    value,
+    hours,
+    validations,
+    index,
+    inputNum,
+    whichTime
+  ) {
+    if (helpers.isValidBackendTime(value)) {
+      validations[index][whichTime] = this.runInputValidation(
+        value,
+        hours,
+        index,
+        inputNum,
+        helpers.totalInputs(hours)
+      );
+    }
+
+    validations[index][whichTime].invalidInput = !helpers.isValidInput(value);
+
+    validations = this.updateAdjacentValidations(
+      hours,
+      validations,
+      index,
+      whichTime,
+      inputNum
+    );
+
+    return validations;
+  },
+  runInputValidation: function(value, hours, index, inputNum, totalInputs) {
+    const prevTime = helpers.getPrevious(hours, index, inputNum);
+    const nextTime = helpers.getNext(hours, index, inputNum, totalInputs);
+    let validation = this.defaultValidation();
+
+    if (value === "24hrs") {
+      validation.greaterThanNext = validation.lessThanPrevious = false;
+      return validation;
+    }
+
+    validation.midnightNotLast =
+      value === "2400" && !helpers.isLastInput(inputNum, totalInputs);
+    if (prevTime === undefined) {
+      validation.greaterThanNext = value >= nextTime && nextTime !== "";
+    } else if (nextTime === undefined) {
+      validation.lessThanPrevious =
+        value <= prevTime && value !== "" && prevTime !== "";
+    } else {
+      validation.lessThanPrevious =
+        value <= prevTime && value !== "" && prevTime !== "";
+      validation.greaterThanNext = value >= nextTime && nextTime !== "";
+    }
+
+    validation.invalidInput = !helpers.isValidInput(value);
+    return validation;
+  },
+  updateAdjacentValidations: function(
+    validations,
+    index,
+    whichTime,
+    inputNum,
+    totalInputs
+  ) {
     const prevIndex = index - 1;
     const nextIndex = index + 1;
-    const currentValidations = this.validations[index][whichTime];
-    let prevValidations = this.getPrevious(this.validations, index, inputNum);
-    let nextValidations = this.getNext(
-      this.validations,
+    const currentValidations = validations[index][whichTime];
+    let prevValidations = helpers.getPrevious(validations, index, inputNum);
+    let nextValidations = helpers.getNext(
+      validations,
       index,
       inputNum,
-      this.totalInputs
+      totalInputs
     );
 
     if (prevValidations !== undefined) {
@@ -114,60 +162,26 @@ export const validations = {
       }
     }
 
-    if (!this.isFirstInput(inputNum) && whichTime === "open") {
-      this.validations[prevIndex].close = prevValidations;
+    if (!helpers.isFirstInput(inputNum) && whichTime === "open") {
+      validations[prevIndex].close = prevValidations;
     } else if (whichTime === "close") {
-      this.validations[index].open = prevValidations;
+      validations[index].open = prevValidations;
     }
 
-    if (
-      !this.isLastInput(inputNum, this.totalInputs) &&
-      whichTime === "close"
-    ) {
-      this.validations[nextIndex].open = nextValidations;
+    if (!helpers.isLastInput(inputNum, totalInputs) && whichTime === "close") {
+      validations[nextIndex].open = nextValidations;
     } else if (whichTime === "open") {
-      this.validations[index].close = nextValidations;
+      validations[index].close = nextValidations;
     }
-  },
-  updateAnyErrors: function() {
-    this.validations.forEach(
-      (validation, index) =>
-        (this.validations[index].anyErrors = this.anyErrors(validation))
-    );
+
+    return validations;
   },
   anyErrors: function(validation) {
-    return this.anyError(validation.open) || this.anyError(validation.close)
-      ? true
-      : false;
+    return this.anyError(validation.open) || this.anyError(validation.close);
   },
   anyError: function(validation) {
     return Object.keys(validation).some(key => {
       return validation[key] === true;
     });
-  },
-  activeErrors: function(index) {
-    const validations = this.validations[index];
-    let errors = [];
-
-    Object.keys(validations).forEach(key => {
-      if (typeof validations[key] === "object") {
-        let validation = validations[key];
-        Object.keys(validation)
-          .filter(key => {
-            return validation[key] === true;
-          })
-          .forEach(error => {
-            errors.push({
-              whichTime: key,
-              error: error
-            });
-          });
-      }
-    });
-
-    return errors;
-  },
-  errorMessage: function(whichTime, error) {
-    return this.errors[whichTime][error];
   }
 };

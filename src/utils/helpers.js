@@ -21,6 +21,14 @@ export default {
   isValidBackendTime: function(value) {
     return moment(value, "HHmm", true).isValid();
   },
+  isValidInput: function(value) {
+    return (
+      this.isValidBackendTime(value) ||
+      value === "2400" ||
+      value === "24hrs" ||
+      value === ""
+    );
+  },
   frontendInputFormat: function(value, localization, hourFormat24) {
     if (value === "24hrs") {
       value = localization.t24hours;
@@ -48,6 +56,9 @@ export default {
       return value;
     }
   },
+  totalInputs: function(hours) {
+    return hours.length * 2;
+  },
   isEven: function(value) {
     return value % 2 === 0 ? true : false;
   },
@@ -69,23 +80,16 @@ export default {
   onlyOneRow: function(hours) {
     return hours.length === 1;
   },
-  getPrevious: function(type, index, inputNum) {
+  getPrevious: function(value, index, inputNum) {
     if (inputNum === 1) {
       return;
     }
-
-    return this.isEven(inputNum) ? type[index].open : type[index - 1].close;
+    return this.isEven(inputNum) ? value[index].open : value[index - 1].close;
   },
-  getNext: function(type, index, inputNum, totalInputs, whichTime, day) {
-    // console.log("Day: " + day);
-    // console.log("InputNum: " + inputNum);
-    // console.log("Total Inputs: " + totalInputs);
+  getNext: function(value, index, inputNum, totalInputs) {
     if (inputNum === totalInputs) {
       return;
     }
-    // if (this.isEven(inputNum)) {
-    //   console.log("Which time: " + whichTime);
-    // }
-    return this.isEven(inputNum) ? type[index + 1].open : type[index].close;
+    return this.isEven(inputNum) ? value[index + 1].open : value[index].close;
   }
 };

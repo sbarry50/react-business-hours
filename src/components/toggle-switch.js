@@ -1,6 +1,13 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
+import styled from "@emotion/styled";
 import "../styles/toggle-switch.css";
+
+const ToggleSwitchInner = styled.span`
+  &:before {
+    background-color: ${(props) => props.color};
+  }
+`;
 
 /*
 Toggle Switch Component
@@ -11,11 +18,11 @@ Src: https://www.sitepoint.com/react-toggle-switch-reusable-component/
 
 class ToggleSwitch extends Component {
   state = {
-    checked: this.props.defaultChecked
+    checked: this.props.defaultChecked,
   };
-  onChange = e => {
+  onChange = (e) => {
     this.setState({
-      checked: e.target.checked
+      checked: e.target.checked,
     });
     if (typeof this.props.onChange === "function") this.props.onChange();
   };
@@ -34,12 +41,13 @@ class ToggleSwitch extends Component {
         />
         {this.props.id ? (
           <label className='toggle-switch-label' htmlFor={this.props.id}>
-            <span
+            <ToggleSwitchInner
               className={
                 this.props.disabled
                   ? "toggle-switch-inner toggle-switch-disabled"
                   : "toggle-switch-inner"
               }
+              color={this.props.color}
               data-yes={this.props.Text[0]}
               data-no={this.props.Text[1]}
             />
@@ -57,7 +65,7 @@ class ToggleSwitch extends Component {
   }
   // Set text for rendering.
   static defaultProps = {
-    Text: ["Yes", "No"]
+    Text: ["Yes", "No"],
   };
 }
 
@@ -69,7 +77,8 @@ ToggleSwitch.propTypes = {
   defaultChecked: PropTypes.bool,
   switchWidth: PropTypes.number,
   currentValue: PropTypes.bool,
-  disabled: PropTypes.bool
+  disabled: PropTypes.bool,
+  color: PropTypes.string,
 };
 
 export default ToggleSwitch;
