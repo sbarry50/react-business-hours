@@ -1,6 +1,6 @@
 import moment from "moment";
 
-export default {
+const helpers = {
   titleCase: function(str) {
     return str
       .split("-")
@@ -93,3 +93,5 @@ export default {
     return this.isEven(inputNum) ? value[index + 1].open : value[index].close;
   }
 };
+
+export default helpers;

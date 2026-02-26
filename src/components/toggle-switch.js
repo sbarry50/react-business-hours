@@ -35,7 +35,6 @@ class ToggleSwitch extends Component {
           className='toggle-switch-checkbox'
           id={this.props.id}
           checked={this.props.currentValue}
-          defaultChecked={this.props.defaultChecked}
           onChange={this.onChange}
           disabled={this.props.disabled}
         />

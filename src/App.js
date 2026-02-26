@@ -19,10 +19,6 @@ const DemoComponent = styled.div`
   margin-bottom: 50px;
 `;
 
-const DemoComponentWide = styled.div`
-  width: 800px;
-`;
-
 function App() {
   return (
     <div className='App'>
@@ -31,10 +27,10 @@ function App() {
         <p>
           React component for setting business hours in an administration panel.
         </p>
-        <a href='https://github.com/sbarry50/vue-BusinessHours'>Github</a>
+        <a href='https://github.com/sbarry50/react-business-hours'>Github</a>
         <DemoComponent>
           <h2>Business Hours</h2>
-          <BusinessHours days={demoDays} time-increment={15}></BusinessHours>
+          <BusinessHours days={demoDays} timeIncrement={15}></BusinessHours>
         </DemoComponent>
         <DemoComponent>
           <h2>Holiday Hours, Select Mode</h2>
@@ -43,7 +39,7 @@ function App() {
             name='holidayHours'
             type='select'
             color='#00af0b'
-            time-increment={60}
+            timeIncrement={60}
           ></BusinessHours>
         </DemoComponent>
         <DemoComponent>
@@ -54,16 +50,16 @@ function App() {
             color='#e06c00'
           ></BusinessHours>
         </DemoComponent>
-        {/* <DemoComponent>
+        <DemoComponent>
           <h2>Business Hours with Spanish Translation, 24h time format</h2>
           <BusinessHours
             days={demoDaysSpanish}
             name='spanishHoursDatalist'
             color='#6b0b9d'
             localization={demoSpanishLocalization}
-            hour-format24={true}
+            hourFormat24={true}
           ></BusinessHours>
-        </DemoComponent> */}
+        </DemoComponent>
       </DemoContainer>
     </div>
   );

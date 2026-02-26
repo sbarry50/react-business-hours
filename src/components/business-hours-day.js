@@ -1,7 +1,7 @@
-/** @jsx jsx */
+/** @jsxImportSource @emotion/react */
 import React from "react";
 import PropTypes from "prop-types";
-import { jsx, css } from "@emotion/core";
+import { css } from "@emotion/react";
 import styled from "@emotion/styled";
 import uniqid from "uniqid";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -94,13 +94,8 @@ class BusinessHoursDay extends React.Component {
     });
   }
 
-  handleChange(whichTime, index, e) {
+  handleChange(whichTime, index, value) {
     let hours = this.state.hours;
-    const value = helpers.backendInputFormat(
-      e,
-      this.props.localization,
-      this.props.hourFormat24
-    );
 
     if (value === "24hrs") {
       hours = this.resetHours(hours);

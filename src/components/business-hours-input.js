@@ -38,22 +38,12 @@ class BusinessHoursInput extends React.Component {
     this.handleChange = this.handleChange.bind(this);
   }
 
-  //   componentWillReceiveProps(nextProps) {
-  //     // You don't have to do this check first, but it can help prevent an unneeded render
-  //     if (nextProps.selectedTime !== this.state.selected) {
-  //       this.setState({ selected: nextProps.selectedTime });
-  //     }
-  //   }
-
   handleChange(e) {
     const value = helpers.backendInputFormat(
       e.target.value,
       this.props.localization,
       this.props.hourFormat24
     );
-    // this.setState({
-    //   selected: value
-    // });
     this.props.onTimeChange(value);
   }
 
@@ -193,15 +183,15 @@ class BusinessHoursInput extends React.Component {
     return (
       <>
         {type === "select" ? (
-          <Select name={name} onChange={this.handleChange}>
+          <Select name={name} value={selected} onChange={this.handleChange}>
             {helpers.isFirstRow(index) && helpers.onlyOneRow(hours) && (
-              <option value>{this.defaultText()}</option>
+              <option value=''>{this.defaultText()}</option>
             )}
             {helpers.isFirstRow(index) && (
               <option value='24hrs'>{localization.t24hours}</option>
             )}
             {this.filteredTimes().map(time => (
-              <option key={time} value={time} selected={time === selected}>
+              <option key={time} value={time}>
                 {this.formatTime(time, hourFormat24)}
               </option>
             ))}
