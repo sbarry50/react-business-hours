@@ -1,6 +1,6 @@
 import helpers from "./helpers";
 
-export default {
+const vlds = {
   defaultValidations: function() {
     return {
       open: this.defaultValidation(),
@@ -185,3 +185,5 @@ export default {
     });
   }
 };
+
+export default vlds;

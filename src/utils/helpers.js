@@ -1,6 +1,9 @@
-import moment from "moment";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 
-export default {
+dayjs.extend(customParseFormat);
+
+const helpers = {
   titleCase: function(str) {
     return str
       .split("-")
@@ -10,16 +13,16 @@ export default {
       .join(" ");
   },
   frontendTimeFormat: function(value, hourFormat24) {
-    return moment(value, "HHmm").format(hourFormat24 ? "HH:mm" : "hh:mm A");
+    return dayjs(value, "HHmm").format(hourFormat24 ? "HH:mm" : "hh:mm A");
   },
   backendTimeFormat: function(value) {
-    return moment(value, "hh:mm A").format("HHmm");
+    return dayjs(value, "hh:mm A").format("HHmm");
   },
   isValidFrontendTime: function(value, hourFormat24) {
-    return moment(value, hourFormat24 ? "HH:mm" : "hh:mm A", true).isValid();
+    return dayjs(value, hourFormat24 ? "HH:mm" : "hh:mm A", true).isValid();
   },
   isValidBackendTime: function(value) {
-    return moment(value, "HHmm", true).isValid();
+    return dayjs(value, "HHmm", true).isValid();
   },
   isValidInput: function(value) {
     return (
@@ -93,3 +96,5 @@ export default {
     return this.isEven(inputNum) ? value[index + 1].open : value[index].close;
   }
 };
+
+export default helpers;

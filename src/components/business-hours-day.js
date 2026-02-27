@@ -1,7 +1,7 @@
-/** @jsx jsx */
-import React from "react";
+/** @jsxImportSource @emotion/react */
+import React, { useState, useCallback, useRef } from "react";
 import PropTypes from "prop-types";
-import { jsx, css } from "@emotion/core";
+import { css } from "@emotion/react";
 import styled from "@emotion/styled";
 import uniqid from "uniqid";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -63,376 +63,323 @@ const ErrorsListItem = styled.li`
   margin-bottom: 6px;
 `;
 
-class BusinessHoursDay extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      hours: props.hours,
-      validations: vlds.runValidations(props.hours),
-    };
-    // this.handleChange = this.handleChange.bind(this);
-    this.handleToggle = this.handleToggle.bind(this);
-    this.addRow = this.addRow.bind(this);
-    this.removeRow = this.removeRow.bind(this);
-  }
+const BusinessHoursDay = ({
+  day,
+  hours: initialHours,
+  name,
+  timeIncrement,
+  type,
+  color,
+  switchWidth,
+  hourFormat24,
+  localization,
+  hoursChange,
+}) => {
+  const [hours, setHours] = useState(initialHours);
+  const [validations, setValidations] = useState(() =>
+    vlds.runValidations(initialHours)
+  );
 
-  componentDidMount() {
-    // console.log(this.state.validations);
-    // vlds.runValidations(this.state.hours);
-  }
+  const hoursRef = useRef(hours);
+  hoursRef.current = hours;
 
-  setHours(hours) {
-    this.setState({
-      hours: hours,
-    });
-  }
+  const errors = {
+    open: {
+      invalidInput: localization.open.invalidInput,
+      greaterThanNext: localization.open.greaterThanNext,
+      lessThanPrevious: localization.open.lessThanPrevious,
+      midnightNotLast: localization.open.midnightNotLast,
+    },
+    close: {
+      invalidInput: localization.close.invalidInput,
+      lessThanPrevious: localization.close.lessThanPrevious,
+      greaterThanNext: localization.close.greaterThanNext,
+      midnightNotLast: localization.close.midnightNotLast,
+    },
+  };
 
-  setValidations(hours) {
-    const validations = vlds.runValidations(hours);
-    this.setState({
-      validations: validations,
-    });
-  }
+  const updateState = useCallback(
+    (newHours) => {
+      setHours(newHours);
+      setValidations(vlds.runValidations(newHours));
+      hoursChange({ [day]: newHours });
+    },
+    [day, hoursChange]
+  );
 
-  handleChange(whichTime, index, e) {
-    let hours = this.state.hours;
-    const value = helpers.backendInputFormat(
-      e,
-      this.props.localization,
-      this.props.hourFormat24
-    );
+  const resetHours = (hrs) => {
+    hrs.splice(1);
+    hrs[0].open = "";
+    hrs[0].close = "";
+    return hrs;
+  };
 
-    if (value === "24hrs") {
-      hours = this.resetHours(hours);
-      hours[0].open = hours[0].close = value;
-      this.setHours(hours);
-      this.setValidations(hours);
-      this.updateHours();
-      return;
-    }
-    if (
-      (hours[index].open === "24hrs" || hours[index].close === "24hrs") &&
-      value === ""
-    ) {
-      hours[index].open = hours[index].close = value;
-      this.setHours(hours);
-      this.setValidations(hours);
-      this.updateHours();
-      return;
-    }
-    if (
-      !helpers.onlyOneRow(hours) &&
-      value === "" &&
-      ((whichTime === "open" && hours[index].close === "") ||
-        (whichTime === "close" && hours[index].open === ""))
-    ) {
-      this.removeRow(index);
-      this.setValidations(hours);
-      this.updateHours();
-      return;
-    }
-    hours[index][whichTime] = value;
-    this.setHours(hours);
-    this.setValidations(hours);
-    this.updateHours();
-  }
+  const handleChange = useCallback(
+    (whichTime, index, value) => {
+      let hrs = [...hoursRef.current.map((h) => ({ ...h }))];
 
-  handleToggle() {
-    const hours = this.resetHours(this.state.hours);
-    hours[0].isOpen = hours[0].isOpen ? false : true;
-    this.setHours(hours);
-    this.setValidations(hours);
-    this.updateHours();
-  }
+      if (value === "24hrs") {
+        hrs = resetHours(hrs);
+        hrs[0].open = hrs[0].close = value;
+        updateState(hrs);
+        return;
+      }
+      if (
+        (hrs[index].open === "24hrs" || hrs[index].close === "24hrs") &&
+        value === ""
+      ) {
+        hrs[index].open = hrs[index].close = value;
+        updateState(hrs);
+        return;
+      }
+      if (
+        !helpers.onlyOneRow(hrs) &&
+        value === "" &&
+        ((whichTime === "open" && hrs[index].close === "") ||
+          (whichTime === "close" && hrs[index].open === ""))
+      ) {
+        hrs.splice(index, 1);
+        updateState(hrs);
+        return;
+      }
+      hrs[index][whichTime] = value;
+      updateState(hrs);
+    },
+    [updateState]
+  );
 
-  addRow() {
-    const hours = this.state.hours;
+  const handleToggle = useCallback(() => {
+    let hrs = [...hoursRef.current.map((h) => ({ ...h }))];
+    hrs = resetHours(hrs);
+    hrs[0].isOpen = !hrs[0].isOpen;
+    updateState(hrs);
+  }, [updateState]);
 
-    hours.push({
+  const addRow = useCallback(() => {
+    const hrs = [...hoursRef.current.map((h) => ({ ...h }))];
+    hrs.push({
       id: uniqid(),
       open: "",
       close: "",
       isOpen: true,
     });
+    updateState(hrs);
+  }, [updateState]);
 
-    this.setHours(hours);
-    this.setValidations(hours);
-    this.updateHours();
-  }
-
-  removeRow(index) {
-    const hours = this.state.hours;
-    if (index !== -1) {
-      hours.splice(index, 1);
-      this.setState({ hours: hours });
-    }
-    vlds.runValidations(this.state.hours);
-    this.updateHours();
-  }
-
-  resetHours(hours) {
-    hours.splice(1);
-    hours[0].open = "";
-    hours[0].close = "";
-
-    return hours;
-  }
-
-  errors = {
-    open: {
-      invalidInput: this.props.localization.open.invalidInput,
-      greaterThanNext: this.props.localization.open.greaterThanNext,
-      lessThanPrevious: this.props.localization.open.lessThanPrevious,
-      midnightNotLast: this.props.localization.open.midnightNotLast,
+  const removeRow = useCallback(
+    (index) => {
+      const hrs = [...hoursRef.current.map((h) => ({ ...h }))];
+      if (index !== -1) {
+        hrs.splice(index, 1);
+      }
+      updateState(hrs);
     },
-    close: {
-      invalidInput: this.props.localization.close.invalidInput,
-      lessThanPrevious: this.props.localization.close.lessThanPrevious,
-      greaterThanNext: this.props.localization.close.greaterThanNext,
-      midnightNotLast: this.props.localization.close.midnightNotLast,
-    },
-  };
+    [updateState]
+  );
 
-  activeErrors(index) {
-    const validations = this.state.validations[index];
-    let errors = [];
+  const activeErrors = (index) => {
+    const vld = validations[index];
+    const errs = [];
 
-    Object.keys(validations).forEach((key) => {
-      if (typeof validations[key] === "object") {
-        let validation = validations[key];
+    Object.keys(vld).forEach((key) => {
+      if (typeof vld[key] === "object") {
+        const validation = vld[key];
         Object.keys(validation)
-          .filter((key) => {
-            return validation[key] === true;
-          })
+          .filter((k) => validation[k] === true)
           .forEach((error) => {
-            errors.push({
-              whichTime: key,
-              error: error,
-            });
+            errs.push({ whichTime: key, error });
           });
       }
     });
 
-    return errors;
-  }
+    return errs;
+  };
 
-  errorMessage(whichTime, error) {
-    return this.errors[whichTime][error];
-  }
+  const errorMessage = (whichTime, error) => errors[whichTime][error];
 
-  isOpenToday() {
-    return this.state.hours[0].isOpen;
-  }
+  const isOpenToday = () => hours[0].isOpen;
 
-  anyOpen() {
-    return this.state.hours.some((hour) => {
-      return hour.isOpen === true;
-    });
-  }
+  const anyOpen = () => hours.some((hour) => hour.isOpen === true);
 
-  inputNum(whichTime, index) {
-    if (whichTime === "open") {
-      return index * 2 + 1;
-    } else if (whichTime === "close") {
-      return index * 2 + 2;
-    }
-  }
+  const inputNum = (whichTime, index) => {
+    if (whichTime === "open") return index * 2 + 1;
+    if (whichTime === "close") return index * 2 + 2;
+  };
 
-  showDay(index) {
-    return index > 0 ? false : true;
-  }
+  const showDay = (index) => index === 0;
 
-  showRemoveButton() {
-    return this.state.hours.length > 1 ? true : false;
-  }
+  const showRemoveButton = () => hours.length > 1;
 
-  showAddButton(index) {
+  const showAddButton = (index) => {
     return (
-      this.state.hours.length === index + 1 &&
-      this.state.hours[index].open !== "" &&
-      this.state.hours[index].close !== "" &&
-      this.state.hours[index].open !== "24hrs" &&
-      this.state.hours[index].close !== "24hrs" &&
+      hours.length === index + 1 &&
+      hours[index].open !== "" &&
+      hours[index].close !== "" &&
+      hours[index].open !== "24hrs" &&
+      hours[index].close !== "24hrs" &&
       !(
-        this.props.type === "select" &&
-        this.props.timeIncrement === 15 &&
-        this.state.hours[index].close === "2345"
+        type === "select" &&
+        timeIncrement === 15 &&
+        hours[index].close === "2345"
       ) &&
       !(
-        this.props.type === "select" &&
-        this.props.timeIncrement === 30 &&
-        this.state.hours[index].close === "2330"
+        type === "select" &&
+        timeIncrement === 30 &&
+        hours[index].close === "2330"
       ) &&
       !(
-        this.props.type === "select" &&
-        this.props.timeIncrement === 60 &&
-        this.state.hours[index].close === "2300"
+        type === "select" &&
+        timeIncrement === 60 &&
+        hours[index].close === "2300"
       ) &&
-      this.state.hours[index].close !== "2400" &&
-      this.state.validations[index].anyErrors === false
+      hours[index].close !== "2400" &&
+      validations[index].anyErrors === false
     );
-  }
+  };
 
-  updateHours() {
-    const updatedHours = { [this.props.day]: this.state.hours };
-    this.props.hoursChange(updatedHours);
-  }
-
-  render() {
-    const validations = this.state.validations;
-    const day = this.props.day;
-    const name = this.props.name;
-    const type = this.props.type;
-    const color = this.props.color;
-    const timeIncrement = this.props.timeIncrement;
-    const switchWidth = this.props.switchWidth;
-    const hourFormat24 = this.props.hourFormat24;
-    const localization = this.props.localization;
-
-    return (
-      <div>
-        {this.state.hours.map(({ open, close, id, isOpen }, index) => (
-          <div key={id}>
-            <FlexRow role='rowgroup'>
+  return (
+    <div>
+      {hours.map(({ open, close, id, isOpen }, index) => (
+        <div key={id}>
+          <FlexRow role="rowgroup">
+            <div
+              css={css`
+                width: 130px;
+              `}
+              role="cell"
+            >
+              {showDay(index) && <div>{localization.days[day]}</div>}
+            </div>
+            <div
+              css={css`
+                width: 90px;
+                margin-right: 20px;
+              `}
+              role="cell"
+            >
+              {showDay(index) && (
+                <ToggleSwitch
+                  id={id}
+                  Name={day}
+                  Text={[localization.switchOpen, localization.switchClosed]}
+                  onChange={handleToggle}
+                  currentValue={anyOpen()}
+                  switchWidth={switchWidth}
+                  color={color}
+                />
+              )}
+            </div>
+            {isOpenToday() && (
               <div
                 css={css`
-                  width: 130px;
+                  width: 110px;
                 `}
-                role='cell'
+                role="cell"
               >
-                {this.showDay(index) && <div>{localization.days[day]}</div>}
+                <BusinessHoursInput
+                  index={index}
+                  name={name}
+                  type={type}
+                  inputNum={inputNum("open", index)}
+                  totalInputs={helpers.totalInputs(hours)}
+                  day={day}
+                  hours={hours}
+                  timeIncrement={timeIncrement}
+                  selectedTime={open}
+                  whichHour="open"
+                  localization={localization}
+                  hourFormat24={hourFormat24}
+                  onTimeChange={(val) => handleChange("open", index, val)}
+                  anyError={vlds.anyError(validations[index].open)}
+                />
               </div>
+            )}
+            {isOpenToday() && (
               <div
                 css={css`
-                  width: 90px;
-                  margin-right: 20px;
+                  margin: 0 7px;
+                  width: 4px;
                 `}
-                role='cell'
+                role="cell"
               >
-                {this.showDay(index) && (
-                  <ToggleSwitch
-                    id={id}
-                    Name={day}
-                    Text={[localization.switchOpen, localization.switchClosed]}
-                    onChange={this.handleToggle}
-                    currentValue={this.anyOpen()}
-                    switchWidth={switchWidth}
-                    color={this.props.color}
+                -
+              </div>
+            )}
+            {isOpenToday() && (
+              <div
+                css={css`
+                  width: 110px;
+                `}
+                role="cell"
+              >
+                <BusinessHoursInput
+                  index={index}
+                  name={name}
+                  type={type}
+                  inputNum={inputNum("close", index)}
+                  totalInputs={helpers.totalInputs(hours)}
+                  day={day}
+                  hours={hours}
+                  timeIncrement={timeIncrement}
+                  selectedTime={close}
+                  whichHour="close"
+                  localization={localization}
+                  hourFormat24={hourFormat24}
+                  onTimeChange={(val) => handleChange("close", index, val)}
+                  anyError={vlds.anyError(validations[index].close)}
+                />
+              </div>
+            )}
+            {isOpenToday() && (
+              <div
+                css={css`
+                  display: flex;
+                  justify-content: center;
+                  width: 50px;
+                `}
+                role="cell"
+              >
+                {showRemoveButton() && (
+                  <IconButton
+                    icon={faTimes}
+                    onClick={() => removeRow(index)}
                   />
                 )}
               </div>
-              {this.isOpenToday() && (
-                <div
-                  css={css`
-                    width: 110px;
-                  `}
-                  role='cell'
-                >
-                  <BusinessHoursInput
-                    index={index}
-                    name={name}
-                    type={type}
-                    inputNum={this.inputNum("open", index)}
-                    totalInputs={helpers.totalInputs(this.state.hours)}
-                    day={day}
-                    hours={this.state.hours}
-                    timeIncrement={timeIncrement}
-                    selectedTime={open}
-                    whichHour='open'
-                    localization={localization}
-                    hourFormat24={hourFormat24}
-                    onTimeChange={this.handleChange.bind(this, "open", index)}
-                    anyError={vlds.anyError(validations[index].open)}
-                  ></BusinessHoursInput>
-                </div>
-              )}
-              {this.isOpenToday() && (
-                <div
-                  css={css`
-                    margin: 0 7px;
-                    width: 4px;
-                  `}
-                  role='cell'
-                >
-                  -
-                </div>
-              )}
-              {this.isOpenToday() && (
-                <div
-                  css={css`
-                    width: 110px;
-                  `}
-                  role='cell'
-                >
-                  <BusinessHoursInput
-                    index={index}
-                    name={name}
-                    type={type}
-                    inputNum={this.inputNum("close", index)}
-                    totalInputs={helpers.totalInputs(this.state.hours)}
-                    day={day}
-                    hours={this.state.hours}
-                    timeIncrement={timeIncrement}
-                    selectedTime={close}
-                    whichHour='close'
-                    localization={localization}
-                    hourFormat24={hourFormat24}
-                    onTimeChange={this.handleChange.bind(this, "close", index)}
-                    anyError={vlds.anyError(validations[index].close)}
-                  ></BusinessHoursInput>
-                </div>
-              )}
-              {this.isOpenToday() && (
-                <div
-                  css={css`
-                    display: flex;
-                    justify-content: center;
-                    width: 50px;
-                  `}
-                  role='cell'
-                >
-                  {this.showRemoveButton() && (
-                    <IconButton
-                      icon={faTimes}
-                      onClick={this.removeRow.bind(this, index)}
-                    />
-                  )}
-                </div>
-              )}
-              {this.isOpenToday() && (
-                <div
-                  css={css`
-                    width: 20%;
-                  `}
-                  role='cell'
-                >
-                  {this.showAddButton(index) && (
-                    <AddHoursButton
-                      type='button'
-                      style={{ color: color }}
-                      onClick={this.addRow}
-                    >
-                      {localization.addHours}
-                    </AddHoursButton>
-                  )}
-                </div>
-              )}
-            </FlexRow>
-            {validations[index].anyErrors && (
-              <ErrorsList>
-                {this.activeErrors(index).map(({ whichTime, error }) => (
-                  <ErrorsListItem key={whichTime + "." + error}>
-                    {this.errorMessage(whichTime, error)}
-                  </ErrorsListItem>
-                ))}
-              </ErrorsList>
             )}
-          </div>
-        ))}
-      </div>
-    );
-  }
-}
+            {isOpenToday() && (
+              <div
+                css={css`
+                  width: 20%;
+                `}
+                role="cell"
+              >
+                {showAddButton(index) && (
+                  <AddHoursButton
+                    type="button"
+                    style={{ color: color }}
+                    onClick={addRow}
+                  >
+                    {localization.addHours}
+                  </AddHoursButton>
+                )}
+              </div>
+            )}
+          </FlexRow>
+          {validations[index].anyErrors && (
+            <ErrorsList>
+              {activeErrors(index).map(({ whichTime, error }) => (
+                <ErrorsListItem key={whichTime + "." + error}>
+                  {errorMessage(whichTime, error)}
+                </ErrorsListItem>
+              ))}
+            </ErrorsList>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 BusinessHoursDay.propTypes = {
   day: PropTypes.string.isRequired,
@@ -444,6 +391,7 @@ BusinessHoursDay.propTypes = {
   switchWidth: PropTypes.number.isRequired,
   hourFormat24: PropTypes.bool.isRequired,
   localization: PropTypes.object.isRequired,
+  hoursChange: PropTypes.func.isRequired,
 };
 
 export default BusinessHoursDay;
