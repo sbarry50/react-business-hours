@@ -94,6 +94,17 @@ const helpers = {
       return;
     }
     return this.isEven(inputNum) ? value[index + 1].open : value[index].close;
+  },
+  generateTimes: function(timeIncrement) {
+    let currentTime = "0000";
+    const result = [];
+    do {
+      result.push(currentTime);
+      currentTime = dayjs(currentTime, "HHmm")
+        .add(timeIncrement, "minutes")
+        .format("HHmm");
+    } while (currentTime !== "0000");
+    return result;
   }
 };
 

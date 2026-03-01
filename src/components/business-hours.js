@@ -89,7 +89,7 @@ const BusinessHours = ({
           switchWidth={switchWidth}
           hourFormat24={hourFormat24}
           localization={localization}
-          hoursChange={(val) => updatedValues(val)}
+          hoursChange={updatedValues}
         />
       ))}
     </Container>

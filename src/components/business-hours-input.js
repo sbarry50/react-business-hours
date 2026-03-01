@@ -1,11 +1,7 @@
 import React, { useMemo, useCallback } from "react";
 import PropTypes from "prop-types";
 import styled from "@emotion/styled";
-import dayjs from "dayjs";
-import customParseFormat from "dayjs/plugin/customParseFormat";
 import helpers from "../utils/helpers";
-
-dayjs.extend(customParseFormat);
 
 const Input = styled.input`
   margin: 1px;
@@ -47,17 +43,10 @@ const BusinessHoursInput = ({
   onTimeChange,
   anyError,
 }) => {
-  const times = useMemo(() => {
-    let currentTime = "0000";
-    const result = [];
-    do {
-      result.push(currentTime);
-      currentTime = dayjs(currentTime, "HHmm")
-        .add(timeIncrement, "minutes")
-        .format("HHmm");
-    } while (currentTime !== "0000");
-    return result;
-  }, [timeIncrement]);
+  const times = useMemo(
+    () => helpers.generateTimes(timeIncrement),
+    [timeIncrement]
+  );
 
   const handleChange = useCallback(
     (e) => {
@@ -71,19 +60,14 @@ const BusinessHoursInput = ({
     [localization, hourFormat24, onTimeChange]
   );
 
-  const formatTime = (time) => {
-    return dayjs(time, "HHmm").format(hourFormat24 ? "HH:mm" : "hh:mm A");
-  };
-
-  const defaultText = () => {
-    return whichHour === "open"
+  const defaultText =
+    whichHour === "open"
       ? localization.placeholderOpens
       : localization.placeholderCloses;
-  };
 
-  const optionName = () => {
-    return name + "[" + day + "][" + index + "][" + whichHour + "]";
-  };
+  const optionName = `${name}[${day}][${index}][${whichHour}]`;
+
+  const datalistID = `${name.replace(/_/g, "-")}-${day}-${index}-${whichHour}`;
 
   const getFiltered = (when, adjacentTime, collection) => {
     if (
@@ -129,40 +113,33 @@ const BusinessHoursInput = ({
     return filtered;
   };
 
-  const showMidnightOption = () => {
-    return (
-      helpers.isLastRow(index, hours) &&
-      whichHour === "close" &&
-      hours[index].close !== "24hrs"
-    );
-  };
+  const showMidnightOption =
+    helpers.isLastRow(index, hours) &&
+    whichHour === "close" &&
+    hours[index].close !== "24hrs";
 
-  const formattedTime = () => {
-    return helpers.frontendInputFormat(selectedTime, localization, hourFormat24);
-  };
-
-  const datalistID = () => {
-    return (
-      name.replace("_", "-") + "-" + day + "-" + index + "-" + whichHour
-    );
-  };
+  const formattedTime = helpers.frontendInputFormat(
+    selectedTime,
+    localization,
+    hourFormat24
+  );
 
   return (
     <>
       {type === "select" ? (
         <Select name={name} value={selectedTime} onChange={handleChange}>
           {helpers.isFirstRow(index) && helpers.onlyOneRow(hours) && (
-            <option value="">{defaultText()}</option>
+            <option value="">{defaultText}</option>
           )}
           {helpers.isFirstRow(index) && (
             <option value="24hrs">{localization.t24hours}</option>
           )}
           {filteredTimes().map((time) => (
             <option key={time} value={time}>
-              {formatTime(time)}
+              {helpers.frontendTimeFormat(time, hourFormat24)}
             </option>
           ))}
-          {showMidnightOption() && (
+          {showMidnightOption && (
             <option value="2400">{localization.midnight}</option>
           )}
         </Select>
@@ -171,23 +148,25 @@ const BusinessHoursInput = ({
           <Input
             style={{ border: anyError ? "solid #e3342f 1px" : "" }}
             type="text"
-            list={datalistID()}
-            placeholder={defaultText()}
+            list={datalistID}
+            placeholder={defaultText}
             onBlur={handleChange}
-            defaultValue={formattedTime()}
+            defaultValue={formattedTime}
           />
-          <datalist id={datalistID()}>
+          <datalist id={datalistID}>
             {helpers.isFirstRow(index) && (
               <option>{localization.t24hours}</option>
             )}
             {filteredTimes().map((time) => (
-              <option key={time}>{formatTime(time)}</option>
+              <option key={time}>
+                {helpers.frontendTimeFormat(time, hourFormat24)}
+              </option>
             ))}
-            {showMidnightOption() && (
+            {showMidnightOption && (
               <option>{localization.midnight}</option>
             )}
           </datalist>
-          <input name={optionName()} type="hidden" value={selectedTime} />
+          <input name={optionName} type="hidden" value={selectedTime} />
         </div>
       )}
     </>
