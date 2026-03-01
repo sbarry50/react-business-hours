@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useMemo, useCallback } from "react";
 import PropTypes from "prop-types";
 import styled from "@emotion/styled";
-import moment from "moment";
 import helpers from "../utils/helpers";
 
 const Input = styled.input`
@@ -28,122 +27,54 @@ const Select = styled.select`
   box-sizing: border-box;
 `;
 
-class BusinessHoursInput extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      times: this.generateTimes(props.timeIncrement)
-    };
+const BusinessHoursInput = ({
+  name,
+  day,
+  hours,
+  index,
+  inputNum,
+  totalInputs,
+  selectedTime,
+  whichHour,
+  timeIncrement,
+  type,
+  localization,
+  hourFormat24,
+  onTimeChange,
+  anyError,
+}) => {
+  const times = useMemo(
+    () => helpers.generateTimes(timeIncrement),
+    [timeIncrement]
+  );
 
-    this.handleChange = this.handleChange.bind(this);
-  }
-
-  //   componentWillReceiveProps(nextProps) {
-  //     // You don't have to do this check first, but it can help prevent an unneeded render
-  //     if (nextProps.selectedTime !== this.state.selected) {
-  //       this.setState({ selected: nextProps.selectedTime });
-  //     }
-  //   }
-
-  handleChange(e) {
-    const value = helpers.backendInputFormat(
-      e.target.value,
-      this.props.localization,
-      this.props.hourFormat24
-    );
-    // this.setState({
-    //   selected: value
-    // });
-    this.props.onTimeChange(value);
-  }
-
-  defaultText() {
-    return this.props.whichHour === "open"
-      ? this.props.localization.placeholderOpens
-      : this.props.localization.placeholderCloses;
-  }
-
-  optionName() {
-    return (
-      this.props.name +
-      "[" +
-      this.props.day +
-      "][" +
-      this.props.index +
-      "][" +
-      this.props.whichHour +
-      "]"
-    );
-  }
-
-  filteredTimes() {
-    let prevTime = helpers.getPrevious(
-        this.props.hours,
-        this.props.index,
-        this.props.inputNum
-      ),
-      nextTime = helpers.getNext(
-        this.props.hours,
-        this.props.index,
-        this.props.inputNum,
-        this.props.totalInputs
-      ),
-      filteredTimes = this.state.times;
-
-    if (!helpers.isFirstRow(this.props.index) && prevTime === "") {
-      prevTime = helpers.getPrevious(
-        this.props.hours,
-        this.props.index,
-        this.props.inputNum - 1
+  const handleChange = useCallback(
+    (e) => {
+      const value = helpers.backendInputFormat(
+        e.target.value,
+        localization,
+        hourFormat24
       );
-    }
+      onTimeChange(value);
+    },
+    [localization, hourFormat24, onTimeChange]
+  );
 
-    if (helpers.isFirstInput(this.props.inputNum)) {
-      filteredTimes = this.getFiltered("before", nextTime, filteredTimes);
-    } else if (
-      helpers.isLastInput(this.props.inputNum, this.props.totalInputs)
-    ) {
-      filteredTimes = this.getFiltered("after", prevTime, filteredTimes);
-    } else {
-      filteredTimes = this.getFiltered("before", nextTime, filteredTimes);
-      filteredTimes = this.getFiltered("after", prevTime, filteredTimes);
-    }
+  const defaultText =
+    whichHour === "open"
+      ? localization.placeholderOpens
+      : localization.placeholderCloses;
 
-    return filteredTimes;
-  }
+  const optionName = `${name}[${day}][${index}][${whichHour}]`;
 
-  showMidnightOption() {
-    return (
-      helpers.isLastRow(this.props.index, this.props.hours) &&
-      this.props.whichHour === "close" &&
-      this.props.hours[this.props.index].close !== "24hrs"
-    );
-  }
+  const datalistID = `${name.replace(/_/g, "-")}-${day}-${index}-${whichHour}`;
 
-  formatTime(time, hourFormat24) {
-    return moment(time, "HHmm").format(hourFormat24 ? "HH:mm" : "hh:mm A");
-  }
-
-  generateTimes(timeIncrement) {
-    let currentTime = "0000",
-      times = [];
-
-    do {
-      times.push(currentTime);
-      currentTime = moment(currentTime, "HHmm")
-        .add(timeIncrement, "minutes")
-        .format("HHmm");
-    } while (currentTime !== "0000");
-
-    return times;
-  }
-
-  getFiltered(when, adjacentTime, collection) {
+  const getFiltered = (when, adjacentTime, collection) => {
     if (
-      helpers.isLastInput(this.props.inputNum, this.props.totalInputs) &&
-      this.props.hours[this.props.index].open === ""
+      helpers.isLastInput(inputNum, totalInputs) &&
+      hours[index].open === ""
     ) {
-      collection = collection.filter(value => value > adjacentTime);
+      collection = collection.filter((value) => value > adjacentTime);
       collection.shift();
       return collection;
     }
@@ -153,92 +84,94 @@ class BusinessHoursInput extends React.Component {
     }
 
     if (when === "before") {
-      collection = collection.filter(value => value < adjacentTime);
+      collection = collection.filter((value) => value < adjacentTime);
     } else if (when === "after") {
-      collection = collection.filter(value => value > adjacentTime);
+      collection = collection.filter((value) => value > adjacentTime);
     }
 
     return collection;
-  }
+  };
 
-  formattedTime() {
-    return helpers.frontendInputFormat(
-      this.props.selectedTime,
-      this.props.localization,
-      this.props.hourFormat24
-    );
-  }
+  const filteredTimes = () => {
+    let prevTime = helpers.getPrevious(hours, index, inputNum);
+    let nextTime = helpers.getNext(hours, index, inputNum, totalInputs);
+    let filtered = times;
 
-  datalistID() {
-    return (
-      this.props.name.replace("_", "-") +
-      "-" +
-      this.props.day +
-      "-" +
-      this.props.index +
-      "-" +
-      this.props.whichHour
-    );
-  }
+    if (!helpers.isFirstRow(index) && prevTime === "") {
+      prevTime = helpers.getPrevious(hours, index, inputNum - 1);
+    }
 
-  render() {
-    const name = this.props.name;
-    const type = this.props.type;
-    const index = this.props.index;
-    const hours = this.props.hours;
-    const selected = this.props.selectedTime;
-    const localization = this.props.localization;
-    const hourFormat24 = this.props.hourFormat24;
-    const anyError = this.props.anyError;
-    return (
-      <>
-        {type === "select" ? (
-          <Select name={name} onChange={this.handleChange}>
-            {helpers.isFirstRow(index) && helpers.onlyOneRow(hours) && (
-              <option value>{this.defaultText()}</option>
-            )}
+    if (helpers.isFirstInput(inputNum)) {
+      filtered = getFiltered("before", nextTime, filtered);
+    } else if (helpers.isLastInput(inputNum, totalInputs)) {
+      filtered = getFiltered("after", prevTime, filtered);
+    } else {
+      filtered = getFiltered("before", nextTime, filtered);
+      filtered = getFiltered("after", prevTime, filtered);
+    }
+
+    return filtered;
+  };
+
+  const showMidnightOption =
+    helpers.isLastRow(index, hours) &&
+    whichHour === "close" &&
+    hours[index].close !== "24hrs";
+
+  const formattedTime = helpers.frontendInputFormat(
+    selectedTime,
+    localization,
+    hourFormat24
+  );
+
+  return (
+    <>
+      {type === "select" ? (
+        <Select name={name} value={selectedTime} onChange={handleChange}>
+          {helpers.isFirstRow(index) && helpers.onlyOneRow(hours) && (
+            <option value="">{defaultText}</option>
+          )}
+          {helpers.isFirstRow(index) && (
+            <option value="24hrs">{localization.t24hours}</option>
+          )}
+          {filteredTimes().map((time) => (
+            <option key={time} value={time}>
+              {helpers.frontendTimeFormat(time, hourFormat24)}
+            </option>
+          ))}
+          {showMidnightOption && (
+            <option value="2400">{localization.midnight}</option>
+          )}
+        </Select>
+      ) : (
+        <div key={selectedTime}>
+          <Input
+            style={{ border: anyError ? "solid #e3342f 1px" : "" }}
+            type="text"
+            list={datalistID}
+            placeholder={defaultText}
+            onBlur={handleChange}
+            defaultValue={formattedTime}
+          />
+          <datalist id={datalistID}>
             {helpers.isFirstRow(index) && (
-              <option value='24hrs'>{localization.t24hours}</option>
+              <option>{localization.t24hours}</option>
             )}
-            {this.filteredTimes().map(time => (
-              <option key={time} value={time} selected={time === selected}>
-                {this.formatTime(time, hourFormat24)}
+            {filteredTimes().map((time) => (
+              <option key={time}>
+                {helpers.frontendTimeFormat(time, hourFormat24)}
               </option>
             ))}
-            {this.showMidnightOption() && (
-              <option value='2400'>{localization.midnight}</option>
+            {showMidnightOption && (
+              <option>{localization.midnight}</option>
             )}
-          </Select>
-        ) : (
-          <div key={selected}>
-            <Input
-              style={{ border: anyError ? "solid #e3342f 1px" : "" }}
-              type='text'
-              list={this.datalistID()}
-              placeholder={this.defaultText()}
-              onBlur={this.handleChange}
-              defaultValue={this.formattedTime()}
-            />
-            <datalist id={this.datalistID()}>
-              {helpers.isFirstRow(index) && (
-                <option>{localization.t24hours}</option>
-              )}
-              {this.filteredTimes().map(time => (
-                <option key={time}>
-                  {this.formatTime(time, hourFormat24)}
-                </option>
-              ))}
-              {this.showMidnightOption() && (
-                <option>{localization.midnight}</option>
-              )}
-            </datalist>
-            <input name={this.optionName()} type='hidden' value={selected} />
-          </div>
-        )}
-      </>
-    );
-  }
-}
+          </datalist>
+          <input name={optionName} type="hidden" value={selectedTime} />
+        </div>
+      )}
+    </>
+  );
+};
 
 BusinessHoursInput.propTypes = {
   name: PropTypes.string.isRequired,
@@ -250,9 +183,11 @@ BusinessHoursInput.propTypes = {
   selectedTime: PropTypes.string.isRequired,
   whichHour: PropTypes.string.isRequired,
   timeIncrement: PropTypes.number.isRequired,
+  type: PropTypes.string.isRequired,
   localization: PropTypes.object.isRequired,
   hourFormat24: PropTypes.bool.isRequired,
-  anyError: PropTypes.bool.isRequired
+  anyError: PropTypes.bool.isRequired,
+  onTimeChange: PropTypes.func.isRequired,
 };
 
 export default BusinessHoursInput;
